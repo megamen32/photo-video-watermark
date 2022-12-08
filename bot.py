@@ -54,10 +54,10 @@ dp.filters_factory.bind(IsAllowedUser)  # Register custom filter
 @dp.message_handler(commands=['start'])
 async def start(message: aiogram.types.Message):
     await bot.set_my_commands([
-        aiogram.types.BotCommand('/settings','set settings for watermark'),
-        aiogram.types.BotCommand('/set','set watermark image')
+        aiogram.types.BotCommand('/settings','Настройки для ватермарки'),
+        aiogram.types.BotCommand('/set','Установить изображение ватермарки')
                                ])
-    await message.answer("Hi. It's watermark bot.\nType /help for details.")
+    await message.answer("Привет это бот для ватермарок.\nПришли фотогрофаию или видео, чтобы устновить ватермарку. \n\nНапиши /set для установки изображения ватермарки. \nИ /settings для настройки расположения ватермарки.")
 
 
 @dp.message_handler(commands=['help'])
@@ -141,16 +141,16 @@ async def PhotoWatermark(photo_abspath, user_text_fill, user_input):
 
 @dp.message_handler(commands='set')
 async def InitWatermarkSet(message: aiogram.types.Message, state: FSMContext):
-    await message.answer('Send watermark logo')
+    await message.answer('Отправьте мне документом ватермарку, желательно в формате png или напишите /cancel')
     await state.set_state('settings')
 
 @dp.message_handler( state='settings')
 async def WatermarkSetInvalid(message: aiogram.types.Message, state: FSMContext):
     if 'cancel' in message.text:
         await state.reset_state()
-        return await message.answer('canceled')
+        return await message.answer('Отменено')
 
-    await message.answer('Send photo')
+    await message.answer('Я жду картинку для ватермарки. Отправьте мне документом ватермарку, желательно в формате png или напишите /cancel')
 @dp.message_handler(content_types=[aiogram.types.ContentType.PHOTO,aiogram.types.ContentType.DOCUMENT],  state='settings')
 async def WatermarkSet(message: aiogram.types.Message, state: FSMContext):
     photo_abspath = '{}/photos/{}.png'.format(downloads_directory, datetime.datetime.now().strftime(
@@ -168,7 +168,7 @@ async def WatermarkSet(message: aiogram.types.Message, state: FSMContext):
     # Work with photo
     await dp.storage.update_data(chat=message.chat.id,user=message.from_user.id,watermark_abspath=photo_abspath)
     #settings.watermark['watermark'] = photo_abspath
-    await message.reply(f'watermark_set to {photo_abspath}')
+    await message.answer_photo(caption=f'Новая Ватермарка установлена',photo=aiogram.types.InputFile(photo_abspath))
 
 
 @dp.message_handler(commands='settings')
@@ -177,13 +177,13 @@ async def InitWatermarkSet(message: aiogram.types.Message, state: FSMContext):
     data=await get_wtm_settings(message.chat.id,message.from_user.id)
     watermark_position = data['watermark_position']
     if watermark_position == "5:main_h-overlay_h":
-        position_tag = "Bottom Left"
+        position_tag = "Нижний Левый"
     elif watermark_position == "main_w-overlay_w-5:main_h-overlay_h-5":
-        position_tag = "Bottom Right"
+        position_tag = "Нижний Правый"
     elif watermark_position == "main_w-overlay_w-5:5":
-        position_tag = "Top Right"
+        position_tag = "Верхний Правый"
     elif watermark_position == "5:5":
-        position_tag = "Top Left"
+        position_tag = "Верхний Левый"
 
     watermark_size = data['watermark_size']
     if int(watermark_size) == 5:
@@ -212,13 +212,13 @@ async def InitWatermarkSet(message: aiogram.types.Message, state: FSMContext):
     try:
         keyboard_markup = InlineKeyboardMarkup()
 
-        btns=[[InlineKeyboardButton(f"Watermark Position - {position_tag}", callback_data="lol")],
-         [InlineKeyboardButton("Set Top Left", callback_data=f"position_5:5"),
-          InlineKeyboardButton("Set Top Right", callback_data=f"position_main_w-overlay_w-5:5")],
-         [InlineKeyboardButton("Set Bottom Left", callback_data=f"position_5:main_h-overlay_h"),
-          InlineKeyboardButton("Set Bottom Right",
+        btns=[[InlineKeyboardButton(f"Позиция Ватермарки - {position_tag}", callback_data="lol")],
+         [InlineKeyboardButton("Верхний Левый Угол", callback_data=f"position_5:5"),
+          InlineKeyboardButton("Верхний Правый Угол", callback_data=f"position_main_w-overlay_w-5:5")],
+         [InlineKeyboardButton("Нижний Левый Угол", callback_data=f"position_5:main_h-overlay_h"),
+          InlineKeyboardButton("Нижний Правый Угол",
                                callback_data=f"position_main_w-overlay_w-5:main_h-overlay_h-5")],
-         [InlineKeyboardButton(f"Watermark Size - {size_tag}", callback_data="lel")],
+         [InlineKeyboardButton(f"Размер Ватермарки - {size_tag}", callback_data="lel")],
          [InlineKeyboardButton("5%", callback_data=f"size_5"), InlineKeyboardButton("7%", callback_data=f"size_7"),
           InlineKeyboardButton("10%", callback_data=f"size_10"),
           InlineKeyboardButton("15%", callback_data=f"size_15"),
@@ -228,12 +228,12 @@ async def InitWatermarkSet(message: aiogram.types.Message, state: FSMContext):
           InlineKeyboardButton("35%", callback_data=f"size_30"),
           InlineKeyboardButton("40%", callback_data=f"size_40"),
           InlineKeyboardButton("45%", callback_data=f"size_45")],
-         [InlineKeyboardButton(f"Reset Settings To Default", callback_data="reset")]]
+         [InlineKeyboardButton(f"Сбросить настройки", callback_data="reset")]]
         for arr in btns:
             keyboard_markup.row(*arr)
 
         await message.reply(
-            text="Here you can set your Watermark Settings:",
+            text="Здесь вы можете установить настройки для Ватермарки:\nНапишите /set чтобы изменить картинку ватермарки:",
             disable_web_page_preview=True,
             parse_mode="Markdown",
             reply_markup=keyboard_markup
@@ -257,15 +257,15 @@ async def callb_hander(query:aiogram.types.CallbackQuery):
     data = await get_wtm_settings(chat=query.message.chat.id, user=query.from_user.id)
     watermark_position = data['watermark_position']
     if watermark_position == "5:main_h-overlay_h":
-        position_tag = "Bottom Left"
+        position_tag = "Нижний Левый"
     elif watermark_position == "main_w-overlay_w-5:main_h-overlay_h-5":
-        position_tag = "Bottom Right"
+        position_tag = "Нижний Правый"
     elif watermark_position == "main_w-overlay_w-5:5":
-        position_tag = "Top Right"
+        position_tag = "Верхний Правый"
     elif watermark_position == "5:5":
-        position_tag = "Top Left"
+        position_tag = "Верхний Левый"
     else:
-        position_tag = "Top Left"
+        position_tag = "Верхний Левый"
 
     watermark_size = data['watermark_size']
     if int(watermark_size) == 5:
@@ -292,23 +292,24 @@ async def callb_hander(query:aiogram.types.CallbackQuery):
         size_tag = "7%"
     try:
         keyboard_markup = InlineKeyboardMarkup()
-        btns=            [[InlineKeyboardButton(f"Watermark Position - {position_tag}", callback_data="lol")],
-             [InlineKeyboardButton("Set Top Left", callback_data=f"position_5:5"),
-              InlineKeyboardButton("Set Top Right", callback_data=f"position_main_w-overlay_w-5:5")],
-             [InlineKeyboardButton("Set Bottom Left", callback_data=f"position_5:main_h-overlay_h"),
-              InlineKeyboardButton("Set Bottom Right",
-                                   callback_data=f"position_main_w-overlay_w-5:main_h-overlay_h-5")],
-             [InlineKeyboardButton(f"Watermark Size - {size_tag}", callback_data="lel")],
-             [InlineKeyboardButton("5%", callback_data=f"size_5"), InlineKeyboardButton("7%", callback_data=f"size_7"),
-              InlineKeyboardButton("10%", callback_data=f"size_10"),
-              InlineKeyboardButton("15%", callback_data=f"size_15"),
-              InlineKeyboardButton("20%", callback_data=f"size_20")],
-             [InlineKeyboardButton("25%", callback_data=f"size_25"),
-              InlineKeyboardButton("30%", callback_data=f"size_30"),
-              InlineKeyboardButton("35%", callback_data=f"size_30"),
-              InlineKeyboardButton("40%", callback_data=f"size_40"),
-              InlineKeyboardButton("45%", callback_data=f"size_45")],
-             [InlineKeyboardButton(f"Reset Settings To Default", callback_data="reset")]]
+        btns = [[InlineKeyboardButton(f"Позиция Ватермарки - {position_tag}", callback_data="lol")],
+                [InlineKeyboardButton("Верхний Левый Угол", callback_data=f"position_5:5"),
+                 InlineKeyboardButton("Верхний Правый Угол", callback_data=f"position_main_w-overlay_w-5:5")],
+                [InlineKeyboardButton("Нижний Левый Угол", callback_data=f"position_5:main_h-overlay_h"),
+                 InlineKeyboardButton("Нижний Правый Угол",
+                                      callback_data=f"position_main_w-overlay_w-5:main_h-overlay_h-5")],
+                [InlineKeyboardButton(f"Размер Ватермарки - {size_tag}", callback_data="lel")],
+                [InlineKeyboardButton("5%", callback_data=f"size_5"),
+                 InlineKeyboardButton("7%", callback_data=f"size_7"),
+                 InlineKeyboardButton("10%", callback_data=f"size_10"),
+                 InlineKeyboardButton("15%", callback_data=f"size_15"),
+                 InlineKeyboardButton("20%", callback_data=f"size_20")],
+                [InlineKeyboardButton("25%", callback_data=f"size_25"),
+                 InlineKeyboardButton("30%", callback_data=f"size_30"),
+                 InlineKeyboardButton("35%", callback_data=f"size_30"),
+                 InlineKeyboardButton("40%", callback_data=f"size_40"),
+                 InlineKeyboardButton("45%", callback_data=f"size_45")],
+                [InlineKeyboardButton(f"Сбросить настройки", callback_data="reset")]]
         for row in btns:
             keyboard_markup.row(*row)
         await query.message.edit_text(
@@ -446,7 +447,7 @@ async def LinkProcess(message: aiogram.types.Message):
         elif file_extension == 'png' or file_extension == 'jpg':
             await LinkPhotoProcess(message, user_input)
         else:
-            await message.answer("Try another link please.")
+            await message.answer("Ссылка на медиа файл не найдена")
     except Exception:
         print(Exception)
         await message.answer('Link: {} - is invalid.'.format(user_input))
