@@ -76,9 +76,9 @@ def apply_watermark(
         "ffmpeg",
         "-i",
         file.path,
+        "-an",
         "-i",
         wtm.overlay.path,
-        "-an",
         "-dn",
         "-sn",
         "-r",
@@ -94,10 +94,14 @@ def apply_watermark(
         "-tune",
         "fastdecode",
         "-filter_complex",
-        f"[1][0]scale2ref=w='iw*{wtm.size}/100':h='ow/mdar'[wm][vid];[vid][wm]overlay={wtm.pos}",
+        f"[1][0]scale2ref=w='iw*{wtm.size}/100':h='ow/mdar'[wm][vid];[vid][wm]overlay={wtm.pos}[v]",
         #f"[1:v]scale=360:360[z];[0:v][z]overlay[out]",
         output_file,
     ]
+    if 'video' in file.type:
+        cmds= '-map [v] -map 0:a -c:v libx264 -c:a copy'.split()
+
+        a=[cmd.insert(cmd.index(output_file),c) for c in cmds]
 
 
     if os.path.isfile(output_file) and overwrite:
