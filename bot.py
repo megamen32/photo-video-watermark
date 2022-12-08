@@ -51,7 +51,7 @@ class IsAllowedUser(aiogram.dispatcher.filters.BoundFilter):
 dp.filters_factory.bind(IsAllowedUser)  # Register custom filter
 
 
-@dp.message_handler(commands=['start'], is_allowed_user=True)
+@dp.message_handler(commands=['start'])
 async def start(message: aiogram.types.Message):
     await bot.set_my_commands([
         aiogram.types.BotCommand('/settings','set settings for watermark'),
@@ -60,7 +60,7 @@ async def start(message: aiogram.types.Message):
     await message.answer("Hi. It's watermark bot.\nType /help for details.")
 
 
-@dp.message_handler(commands=['help'], is_allowed_user=True)
+@dp.message_handler(commands=['help'])
 async def help(message: aiogram.types.Message):
     if len(message.text.split(' ')) == 1:
         await message.answer(settings.help['help_info'])
@@ -151,7 +151,7 @@ async def WatermarkSetInvalid(message: aiogram.types.Message, state: FSMContext)
         return await message.answer('canceled')
 
     await message.answer('Send photo')
-@dp.message_handler(content_types=aiogram.types.ContentType.PHOTO, is_allowed_user=True, state='settings')
+@dp.message_handler(content_types=aiogram.types.ContentType.PHOTO,  state='settings')
 async def WatermarkSet(message: aiogram.types.Message, state: FSMContext):
     photo_abspath = '{}/photos/{}.jpg'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded photo path to downloads/photos
@@ -316,7 +316,7 @@ async def callb_hander(query:aiogram.types.CallbackQuery):
     except aiogram.exceptions.MessageNotModified:
         pass
 
-@dp.message_handler(content_types=aiogram.types.ContentType.PHOTO, is_allowed_user=True)
+@dp.message_handler(content_types=aiogram.types.ContentType.PHOTO)
 async def PhotoProcess(message: aiogram.types.Message):
     photo_abspath = '{}/photos/{}.jpg'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded photo path to downloads/photos
@@ -363,7 +363,7 @@ async def get_wtm_settings(chat,user):
     return data
 
 
-@dp.message_handler(content_types=aiogram.types.ContentType.VIDEO, is_allowed_user=True)
+@dp.message_handler(content_types=aiogram.types.ContentType.VIDEO)
 async def VideoProcess(message: aiogram.types.Message):
     video_abspath = '{}/videos/{}.mp4'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded video path to downloads/video
@@ -426,7 +426,7 @@ async def LinkVideoProcess(file_extension, message):
         print('webm')
 
 
-@dp.message_handler(content_types=aiogram.types.ContentType.TEXT, is_allowed_user=True)
+@dp.message_handler(content_types=aiogram.types.ContentType.TEXT)
 async def LinkProcess(message: aiogram.types.Message):
     try:
         user_input = message.text
