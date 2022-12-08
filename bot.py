@@ -464,13 +464,7 @@ async def on_shutdown(dp):
 if __name__ == '__main__':
     #aiogram.executor.start_polling(dp, skip_updates=False)
     #exit(0)
-    WEBHOOK_HOST = 'https://roomhacker.duckdns.org'
-    WEBHOOK_PATH = '/watermark'
-    WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
-
-    # webserver settings
-    WEBAPP_HOST = '0.0.0.0'  # or ip
-    WEBAPP_PORT = 3001
+    from BOT_SETTINGS.webhook import WEBHOOK_PATH,WEBAPP_HOST,WEBAPP_PORT
     loop=asyncio.new_event_loop()
     aiogram.executor.start_webhook(
         dispatcher=dp,
