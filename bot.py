@@ -137,9 +137,16 @@ async def PhotoWatermark(photo_abspath, user_text_fill, user_input):
 
 @dp.message_handler(commands='set')
 async def InitWatermarkSet(message: aiogram.types.Message, state: FSMContext):
+    await message.answer('Send watermark logo')
     await state.set_state('settings')
 
+@dp.message_handler( state='settings')
+async def WatermarkSetInvalid(message: aiogram.types.Message, state: FSMContext):
+    if 'cancel' in message.text:
+        await state.reset_state()
+        return await message.answer('canceled')
 
+    await message.answer('Send photo')
 @dp.message_handler(content_types=aiogram.types.ContentType.PHOTO, is_allowed_user=True, state='settings')
 async def WatermarkSet(message: aiogram.types.Message, state: FSMContext):
     photo_abspath = '{}/photos/{}.jpg'.format(downloads_directory, datetime.datetime.now().strftime(
@@ -356,7 +363,7 @@ async def get_wtm_settings(chat,user):
 async def VideoProcess(message: aiogram.types.Message):
     video_abspath = '{}/videos/{}.mp4'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded video path to downloads/video
-    watermark_abspath = '{}/watermarks/{}'.format(work_directory, settings.watermark['watermark'])
+    watermark_abspath = settings.watermark['watermark']
 
     # Download video
     file_id = message.video.file_id
@@ -366,17 +373,13 @@ async def VideoProcess(message: aiogram.types.Message):
 
     # Work with video
     video_edited_abspath = str(*video_abspath.split('.')[:-1]) + '_edited.mp4'
-    ffmpeg_cmd = """ffmpeg -i {} -i {} -filter_complex "[1]format=rgba,colorchannelmixer=aa=0.6,scale=iw*0.6:-1[logo];[0][logo]overlay=W-w-W/55:H-h-H/70:format=auto,format=yuv420p" -c:a copy -c:v libx264 -crf 25 -profile:v high -level 4.2 -max_muxing_queue_size 4096 -pix_fmt yuv420p -preset medium -map V:0? -map 0:a? -movflags +faststart -strict -2 {}""".format(
-        video_abspath,
-        watermark_abspath,
-        video_edited_abspath
-    )
-    proc = await asyncio.create_subprocess_shell(
-        ffmpeg_cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    stdout, stderr = await proc.communicate()
+    data=await get_wtm_settings(chat=message.chat.id,user=message.from_user.id)
+    watermark_size = data['watermark_size']
+    watermark_position = data['watermark_position']
+    wtm = Watermark(File(settings.watermark['watermark']), watermark_position, size=watermark_size)
+
+
+    video_edited_abspath = apply_watermark(File(video_abspath), wtm, frame_rate=30, output_file=video_edited_abspath)
 
     # Send video
     await message.answer_video(aiogram.types.InputFile(video_edited_abspath), caption="")
@@ -455,8 +458,8 @@ async def on_shutdown(dp):
 
     logging.warning('Bye!')
 if __name__ == '__main__':
-    aiogram.executor.start_polling(dp, skip_updates=False)
-    exit(0)
+    #aiogram.executor.start_polling(dp, skip_updates=False)
+    #exit(0)
     WEBHOOK_HOST = 'https://roomhacker.duckdns.org'
     WEBHOOK_PATH = '/watermark'
     WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
@@ -468,7 +471,7 @@ if __name__ == '__main__':
     aiogram.executor.start_webhook(
         dispatcher=dp,
         webhook_path=WEBHOOK_PATH,
-        skip_updates=False,
+        skip_updates=True,
         on_startup=on_startup,on_shutdown=on_shutdown,
         host=WEBAPP_HOST,
         port=WEBAPP_PORT,
