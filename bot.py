@@ -53,6 +53,10 @@ dp.filters_factory.bind(IsAllowedUser)  # Register custom filter
 
 @dp.message_handler(commands=['start'], is_allowed_user=True)
 async def start(message: aiogram.types.Message):
+    await bot.set_my_commands([
+        aiogram.types.BotCommand('/settings','set settings for watermark'),
+        aiogram.types.BotCommand('/set','set watermark image')
+                               ])
     await message.answer("Hi. It's watermark bot.\nType /help for details.")
 
 
