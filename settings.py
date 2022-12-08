@@ -5,8 +5,8 @@ bot = {
 }
 
 watermark = {
-    'watermark': 'watermark4.png',
-    'watermark_default_text': "@boxthread",
+    'watermark': 'watermarks/watermark1.png',
+    'watermark_default_text': "@nos_chanel",
     'watermark_default_rgba': (150, 150, 150, 220),
     'watermark_default_rgba_presets': """(150, 150, 150, 220)
 (0, 0, 0, 255)
