@@ -151,19 +151,23 @@ async def WatermarkSetInvalid(message: aiogram.types.Message, state: FSMContext)
         return await message.answer('canceled')
 
     await message.answer('Send photo')
-@dp.message_handler(content_types=aiogram.types.ContentType.PHOTO,  state='settings')
+@dp.message_handler(content_types=[aiogram.types.ContentType.PHOTO,aiogram.types.ContentType.DOCUMENT],  state='settings')
 async def WatermarkSet(message: aiogram.types.Message, state: FSMContext):
-    photo_abspath = '{}/photos/{}.jpg'.format(downloads_directory, datetime.datetime.now().strftime(
+    photo_abspath = '{}/photos/{}.png'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded photo path to downloads/photos
     await state.finish()
     # Download photo
-    file_id = message.photo[-1].file_id
+    if any(message.photo):
+        file_id = message.photo[-1].file_id
+    else:
+        file_id = message.document.file_id
     file = await bot.get_file(file_id)
     file_path = file.file_path
     await bot.download_file(file_path, photo_abspath)
 
     # Work with photo
-    settings.watermark['watermark'] = photo_abspath
+    await dp.storage.update_data(chat=message.chat.id,user=message.from_user.id,watermark_abspath=photo_abspath)
+    #settings.watermark['watermark'] = photo_abspath
     await message.reply(f'watermark_set to {photo_abspath}')
 
 
@@ -341,7 +345,7 @@ async def PhotoProcess(message: aiogram.types.Message):
     else:
         position_tag = "top_left"
     watermark_size = data['watermark_size']
-    wtm = Watermark(File(settings.watermark['watermark']), watermark_position,size=watermark_size)
+    wtm = Watermark(File(data['watermark_abspath']), watermark_position,size=watermark_size)
     photo_abspath2 = '{}/photos/{}_edit.jpg'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded photo path to downloads/photos
 
@@ -359,7 +363,9 @@ async def get_wtm_settings(chat,user):
     if 'watermark_position' not in data:
         data['watermark_position'] = '5:5'
     if 'watermark_size' not in data:
-        data['watermark_size'] = '5'
+        data['watermark_size'] = '15'
+    if 'watermark_abspath' not in data:
+        data['watermark_abspath']=settings.watermark['watermark']
     return data
 
 
@@ -368,6 +374,7 @@ async def VideoProcess(message: aiogram.types.Message):
     video_abspath = '{}/videos/{}.mp4'.format(downloads_directory, datetime.datetime.now().strftime(
         "%Y%m%d-%H%M%S-%f"))  # Downloaded video path to downloads/video
     watermark_abspath = settings.watermark['watermark']
+
 
     # Download video
     file_id = message.video.file_id
@@ -380,7 +387,8 @@ async def VideoProcess(message: aiogram.types.Message):
     data=await get_wtm_settings(chat=message.chat.id,user=message.from_user.id)
     watermark_size = data['watermark_size']
     watermark_position = data['watermark_position']
-    wtm = Watermark(File(settings.watermark['watermark']), watermark_position, size=watermark_size)
+    watermark_abspath=data['watermark_abspath']
+    wtm = Watermark(File(watermark_abspath), watermark_position, size=watermark_size)
 
 
     video_edited_abspath = apply_watermark(File(video_abspath), wtm, frame_rate=30, output_file=video_edited_abspath)
@@ -464,7 +472,7 @@ async def on_shutdown(dp):
 if __name__ == '__main__':
     #aiogram.executor.start_polling(dp, skip_updates=False)
     #exit(0)
-    from BOT_SETTINGS.webhook import WEBHOOK_PATH,WEBAPP_HOST,WEBAPP_PORT
+    from BOT_SETTINGS.webhook import WEBHOOK_PATH, WEBAPP_HOST, WEBAPP_PORT, WEBHOOK_URL
     loop=asyncio.new_event_loop()
     aiogram.executor.start_webhook(
         dispatcher=dp,
