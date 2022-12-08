@@ -352,7 +352,7 @@ async def PhotoProcess(message: aiogram.types.Message):
 
     photo_outpath = apply_watermark(File(photo_abspath), wtm, frame_rate=30, output_file=photo_abspath2)
     # Send photo
-    await message.answer_photo(aiogram.types.InputFile(photo_outpath))
+    await message.answer_photo(aiogram.types.InputFile(photo_outpath),caption=message.caption)
     logging.info('[PHOTO] - [{}] - Watermark has been successfully inserted to photo {} owned user {}.'.format(
         datetime.datetime.now().strftime("%H:%M:%S-%d.%m.%Y"), file_id, message.from_user.id))
     os.remove(photo_abspath)  # Delete .jpg
@@ -395,7 +395,7 @@ async def VideoProcess(message: aiogram.types.Message):
     video_edited_abspath = apply_watermark(File(video_abspath), wtm, frame_rate=30, output_file=video_edited_abspath)
 
     # Send video
-    await message.answer_video(aiogram.types.InputFile(video_edited_abspath), caption="")
+    await message.answer_video(aiogram.types.InputFile(video_edited_abspath), caption=message.caption)
     logging.info(
         '[VIDEO] - [{}] - Video {} has been converted from user {}. And watermark has been successfully inserted into the video.'.format(
             datetime.datetime.now().strftime("%H:%M:%S-%d.%m.%Y"), file_id, message.from_user.id))
@@ -420,7 +420,7 @@ async def LinkPhotoProcess(message, link):
             photo_outpath = await PhotoWatermark(photo_abspath, user_text_fill="", user_input=False)
 
             # Send photo
-            await message.answer_photo(aiogram.types.InputFile(photo_outpath), caption="")
+            await message.answer_photo(aiogram.types.InputFile(photo_outpath), caption=message.text)
             logging.info(
                 '[PHOTO] - [{}] - Watermark has been successfully inserted to photo by link {} owned user {}.'.format(
                     datetime.datetime.now().strftime("%H:%M:%S-%d.%m.%Y"), link, message.from_user.id))

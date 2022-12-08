@@ -95,11 +95,12 @@ def apply_watermark(
         "fastdecode",
         "-filter_complex",
         f"[1][0]scale2ref=w='iw*{wtm.size}/100':h='ow/mdar'[wm][vid];[vid][wm]overlay={wtm.pos}[v]",
+        '-map', '[v]',
         #f"[1:v]scale=360:360[z];[0:v][z]overlay[out]",
         output_file,
     ]
     if 'video' in file.type:
-        cmds= '-map [v] -map 0:a -c:v libx264 -c:a copy'.split()
+        cmds= '-map 0:a -c:v libx264 -c:a copy'.split()
 
         a=[cmd.insert(cmd.index(output_file),c) for c in cmds]
 
